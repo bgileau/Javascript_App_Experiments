@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!-- cse6242 -->
+
+<!-- run: http-server & -->
+
+<html lang="en">
+<head>
+  <style>
+    <!-- define CSS rules -->
+  </style>
+<title> Running Total of TMDb Movies by Year </title>
+</head>
+
+<body>
+
+  <script src="lib/d3/d3.min.js"></script>
+  <script src="lib/d3-dsv/d3-dsv.min.js"></script>
+  <script src="lib/d3-fetch/d3-fetch.min.js"></script>
+
+
+  <script>
+
+    // define the dimensions and margins for the graph
+    var w = 960;
+    var h = 500;
+    var barPadding = 1;
+    var margin = ({top: 20, right: 30, bottom: 30, left: 40});
+
+    // define function to parse time in years format
+    var parseTime = d3.timeParse("%Y");
+    
+    // create scales x & y for X and Y axis and set their ranges
+    var x = d3.scaleTime().range([margin.left, w - margin.right]);
+    /* var y = d3.scaleLinear().range([0, h - margin.top]); */
+    var y = d3.scaleLinear().range([h - margin.bottom, margin.top]);
+
+
+
+
+    // append svg element to the body of the page
+    // set dimensions and position of the svg element
+    var svg = d3.select("body").append("svg").attr("width", w).attr("height", h).attr("id", "svg1");
+
+    // Get the data
+	  var pathToCsv = "data.csv";		// path to csv
+	
+    // here
+    d3.dsv(",", pathToCsv, function (d) {
+    return {
+      // format data attributes if required
+      year: parseTime(d.year),
+      running_total: parseInt(d.running_total)
+    }
+    }).then(function (data) {
+      console.log(data); // you should see the data in your browser's developer tools console 
+      console.log(data[0].year); // d.year works 
+
+      /* Create bar plot using data from csv */
+
+      // set the domains of X and Y scales based on data
+      x.domain([d3.min(data, function(d) { return d.year }), d3.max(data, function(d) { return d.year })])
+      y.domain([0, d3.max(data, function(d) { return d.running_total; })])
+
+      // Add bars to svg - create new elements based on your data
+      /* svg.selectAll("rect").data(data).enter().append("rect").attr("x", function(d){ return x(d[0])}).attr("y", function(d){ return y(d[1])}).attr("width", 50).attr("height", function(d){ return y(d[1])}) */
+      
+      /* for(var k = 0; k < data.length; k++){
+        console.log(h - y(data[k].running_total) - margin.bottom);
+      } */
+
+      var svg_container = svg.append("g").attr("id", "container")
+      var svg_container_bars = svg_container.append("g").attr("id", "bars")
+
+      svg_container_bars.selectAll("rect")
+          .data(data)
+          .enter()
+          .append("rect")
+          .attr("x", function(d, i) {
+            return x(d.year);
+          })
+          .attr("y", function(d) {
+              return (y(d.running_total));
+          })
+          .attr("width", w / data.length - barPadding)
+          .attr("height", function(d) {
+                return h - y(d.running_total) - margin.bottom;
+              })
+        .attr("fill", function(d) {
+                    return "rgb(0, 0, 255)";
+              })
+          .attr("id", "bars");
+
+      // Add the X Axis
+      xAxis = g => g
+      .attr("transform", `translate(0,${h - margin.bottom})`)
+      .call(d3.axisBottom(x).scale(x).ticks(10))
+
+      svg_container.append("g")
+          .call(xAxis).attr("id", "x_axis");
+
+      yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y).scale(y).ticks(10))
+      
+      svg_container.append("g")
+        .call(yAxis).attr("id", "y_axis");
+
+      // Add the text label for X Axis
+      svg_container.append("text").text("Year").attr("x", w/2).attr("y", h).attr("id", "x_axis_label")
+
+      // Add the Y Axis
+      //svg.append("g").call(yAxis).attr("transform", `translate(${margin.left},0)`).attr("id", "y_axis")
+
+      // Add the text label for Y axis
+      svg_container.append("text").text("Running Total").attr("x", 20).attr("y", h/2).attr("id", "y_axis_label").attr("transform", `rotate(270,20,${h/2})`)
+      
+      svg_container.append("text").text("bgileau3").attr("x", w-60).attr("y", h).attr("id", "credit")
+      svg_container.append("text").text("Running Total of TMDb Movies by Year").attr("x", w/2-50).attr("y", margin.top).attr("id", "title")
+
+    }).catch(function (error) {
+      console.log(error);
+    });
+    //console.log(data)
+    
+    
+
+
+  </script>
+
+</body>
+</html>
